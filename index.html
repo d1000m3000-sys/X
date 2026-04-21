@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W</title>
+<link rel="manifest" href="manifest.json">
+<style>
+body { font-family: Arial; margin:0; background:#fff; color:#000; }
+header { padding:15px; font-size:24px; font-weight:bold; text-align:center; }
+.container { padding:10px; }
+.card { border:1px solid #ddd; border-radius:10px; margin-bottom:10px; padding:10px; }
+button { padding:10px; border:none; background:black; color:white; border-radius:8px; }
+input { padding:10px; width:100%; margin-bottom:10px; }
+video { width:100%; border-radius:10px; }
+</style>
+</head>
+<body>
+<header>W</header>
+<div class="container">
+<h3>رفع فيلم</h3>
+<input id="title" placeholder="عنوان الفيلم">
+<input id="thumb" placeholder="رابط الصورة المصغرة">
+<input id="video" placeholder="رابط الفيديو">
+<button onclick="upload()">رفع</button>
+
+<h3>الأفلام</h3>
+<div id="movies"></div>
+</div>
+
+<script>
+let movies = JSON.parse(localStorage.getItem('movies')||'[]');
+
+function render(){
+ document.getElementById('movies').innerHTML='';
+ movies.forEach((m,i)=>{
+  if(!m.approved) return;
+  document.getElementById('movies').innerHTML += `
+  <div class='card'>
+   <img src='${m.thumb}' width='100%'>
+   <h4>${m.title}</h4>
+   <video controls src='${m.video}'></video>
+  </div>`;
+ });
+}
+
+function upload(){
+ let movie = {
+  title: document.getElementById('title').value,
+  thumb: document.getElementById('thumb').value,
+  video: document.getElementById('video').value,
+  approved:false
+ };
+ movies.push(movie);
+ localStorage.setItem('movies', JSON.stringify(movies));
+ alert('تم الإرسال بانتظار الموافقة');
+}
+
+render();
+</script>
+</body>
+</html>
+
+<!-- Admin Page -->
+<!-- save as admin.html -->
+<!DOCTYPE html>
+<html>
+<head><title>Admin</title></head>
+<body>
+<h2>الموافقة على الأفلام</h2>
+<div id="list"></div>
+<script>
+let movies = JSON.parse(localStorage.getItem('movies')||'[]');
+function render(){
+ document.getElementById('list').innerHTML='';
+ movies.forEach((m,i)=>{
+  if(m.approved) return;
+  document.getElementById('list').innerHTML += `
+  <div>
+   <h4>${m.title}</h4>
+   <button onclick="approve(${i})">موافقة</button>
+  </div>`;
+ });
+}
+function approve(i){
+ movies[i].approved=true;
+ localStorage.setItem('movies', JSON.stringify(movies));
+ render();
+}
+render();
+</script>
+</body>
+</html>
+
+/* manifest.json */
+{
+ "name":"W",
+ "short_name":"W",
+ "start_url":"index.html",
+ "display":"standalone",
+ "background_color":"#ffffff",
+ "theme_color":"#000000",
+ "icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"}]
+}
+
+/* service-worker.js */
+self.addEventListener('install', e=>{
+ e.waitUntil(caches.open('w-cache').then(cache=>{
+  return cache.addAll(['index.html']);
+ }));
+});
+self.addEventListener('fetch', e=>{
+ e.respondWith(caches.match(e.request).then(res=>res||fetch(e.request)));
+});
